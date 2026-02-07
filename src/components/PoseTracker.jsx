@@ -4,8 +4,7 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import { FilesetResolver, PoseLandmarker } from "@mediapipe/tasks-vision";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Camera, CameraOff, RotateCcw, Dumbbell } from "lucide-react";
-import { de } from "date-fns/locale";
+import { Camera, CameraOff, RotateCcw, Dumbbell, CheckCircle2, XCircle } from "lucide-react";
 
 const POSE_CONNECTIONS = [
   [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
@@ -17,6 +16,15 @@ const POSE_CONNECTIONS = [
 const VIDEO_WIDTH = 720;
 const VIDEO_HEIGHT = 540;
 
+const EXERCISES = {
+  bicep_curl: {
+    name: "Bicep Curl",
+    targetElbowAngle: 160,
+    targetShoulderAngle: 20,
+    angleTolerance: 10,
+  },
+};
+
 export default function PoseTracker() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -27,6 +35,7 @@ export default function PoseTracker() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedExercise, setSelectedExercise] = useState("bicep_curl");
 
   const [leftReps, setLeftReps] = useState(0);
   const [rightReps, setRightReps] = useState(0);
@@ -34,6 +43,8 @@ export default function PoseTracker() {
   const [rightArmAngle, setRightArmAngle] = useState(null);
   const [leftShoulderAngle, setLeftShoulderAngle] = useState(null);
   const [rightShoulderAngle, setRightShoulderAngle] = useState(null);
+  const [leftPostureCorrect, setLeftPostureCorrect] = useState(false);
+  const [rightPostureCorrect, setRightPostureCorrect] = useState(false);
 
   const leftStageRef = useRef("down");
   const rightStageRef = useRef("down");
@@ -82,6 +93,21 @@ export default function PoseTracker() {
     setLeftShoulderAngle(leftShoulderAngleVal);
     setRightShoulderAngle(rightShoulderAngleVal);
 
+    // Check posture for selected exercise (Bicep Curl)
+    const exercise = EXERCISES[selectedExercise];
+    if (exercise) {
+      const { targetElbowAngle, targetShoulderAngle, angleTolerance } = exercise;
+      
+      // Check if elbow angle is around 160 degrees (correct starting/ending position)
+      const leftElbowCorrect = Math.abs(leftElbowAngle - targetElbowAngle) <= angleTolerance;
+      const leftShoulderCorrect = leftShoulderAngleVal <= targetShoulderAngle + angleTolerance;
+      setLeftPostureCorrect(leftElbowCorrect && leftShoulderCorrect);
+      
+      const rightElbowCorrect = Math.abs(rightElbowAngle - targetElbowAngle) <= angleTolerance;
+      const rightShoulderCorrect = rightShoulderAngleVal <= targetShoulderAngle + angleTolerance;
+      setRightPostureCorrect(rightElbowCorrect && rightShoulderCorrect);
+    }
+
     if (leftElbowAngle > 155) {
       leftStageRef.current = "down";
     }
@@ -102,7 +128,7 @@ export default function PoseTracker() {
     ctx.fillStyle = "#ffffff";
     ctx.fillText(`${leftElbowAngle}°`, lElbow.x + 20, lElbow.y - 10);
     ctx.fillText(`${rightElbowAngle}°`, rElbow.x + 20, rElbow.y - 10);
-  }, []);
+  }, [selectedExercise]);
 
   const drawLandmarks = useCallback((ctx, landmarks) => {
     ctx.lineWidth = 4;
@@ -338,13 +364,92 @@ export default function PoseTracker() {
         </div>
       </div>
 
-      <div className="w-full lg:w-80 space-y-4">
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 mb-5">
-              <Dumbbell className="w-5 h-5 text-emerald-500" />
-              <h3 className="text-lg font-semibold text-white">Joint Angles</h3>
-            </div>
+        <div className="w-full lg:w-80 space-y-4">
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Dumbbell className="w-5 h-5 text-emerald-500" />
+                <h3 className="text-lg font-semibold text-white">Exercise</h3>
+              </div>
+              
+              <Button
+                onClick={() => setSelectedExercise("bicep_curl")}
+                variant={selectedExercise === "bicep_curl" ? "default" : "outline"}
+                className={`w-full ${
+                  selectedExercise === "bicep_curl"
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    : ""
+                }`}
+                size="lg"
+              >
+                <Dumbbell className="w-5 h-5 mr-2" />
+                Bicep Curl
+              </Button>
+              
+              <p className="text-xs text-zinc-500 mt-3">
+                Target: Elbow angle ~160° at start/end position
+              </p>
+            </CardContent>
+          </Card>
+
+          {isRunning && (
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Posture Check</h3>
+                
+                <div className="space-y-3">
+                  <div className={`flex items-center justify-between p-3 rounded-lg ${
+                    leftPostureCorrect ? "bg-emerald-900/30 border border-emerald-700" : "bg-red-900/30 border border-red-700"
+                  }`}>
+                    <span className="text-sm text-zinc-300">Left Arm</span>
+                    <div className="flex items-center gap-2">
+                      {leftPostureCorrect ? (
+                        <>
+                          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                          <span className="text-emerald-400 text-sm font-medium">Correct</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-5 h-5 text-red-400" />
+                          <span className="text-red-400 text-sm font-medium">Adjust</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className={`flex items-center justify-between p-3 rounded-lg ${
+                    rightPostureCorrect ? "bg-emerald-900/30 border border-emerald-700" : "bg-red-900/30 border border-red-700"
+                  }`}>
+                    <span className="text-sm text-zinc-300">Right Arm</span>
+                    <div className="flex items-center gap-2">
+                      {rightPostureCorrect ? (
+                        <>
+                          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                          <span className="text-emerald-400 text-sm font-medium">Correct</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-5 h-5 text-red-400" />
+                          <span className="text-red-400 text-sm font-medium">Adjust</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <p className="text-xs text-zinc-500 mt-4">
+                  Extend arms fully (~160°) with shoulders stable for correct bicep curl position
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <Dumbbell className="w-5 h-5 text-emerald-500" />
+                <h3 className="text-lg font-semibold text-white">Joint Angles</h3>
+              </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 gap-4">
               <div className="bg-zinc-800/80 rounded-lg p-4 border border-zinc-700 text-center">
