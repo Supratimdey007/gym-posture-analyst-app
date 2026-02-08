@@ -21,7 +21,13 @@ const EXERCISES = {
     name: "Bicep Curl",
     downAngle: 160,
     upAngle: 45,
-    angleTolerance: 10,
+    joint: "elbow",
+  },
+  shoulder_press: {
+    name: "Shoulder Press",
+    downAngle: 90,
+    upAngle: 170,
+    joint: "shoulder",
   },
 };
 
@@ -93,47 +99,39 @@ export default function PoseTracker() {
     setLeftShoulderAngle(leftShoulderAngleVal);
     setRightShoulderAngle(rightShoulderAngleVal);
 
-    // Rep counting logic for selected exercise
-      const exercise = EXERCISES[selectedExercise];
-      if (exercise) {
-        const { downAngle, upAngle, angleTolerance } = exercise;
-        
-        // Left arm rep counting: down (160°) -> up (45°) -> down (160°) = 1 rep
-        const leftAtDown = leftElbowAngle >= downAngle - angleTolerance;
-        const leftAtUp = leftElbowAngle <= upAngle + angleTolerance;
-        
-        if (leftAtDown && leftStageRef.current === "up") {
-          // Completed rep: went from up position back to down position
-          setLeftReps(prev => prev + 1);
-          leftStageRef.current = "down";
-        } else if (leftAtUp && leftStageRef.current === "down") {
-          // Reached up position from down position
-          leftStageRef.current = "up";
-        } else if (leftAtDown && leftStageRef.current === "down") {
-          // Still at down position (ready to start)
-          leftStageRef.current = "down";
-        }
-        
-        // Right arm rep counting: down (160°) -> up (45°) -> down (160°) = 1 rep
-        const rightAtDown = rightElbowAngle >= downAngle - angleTolerance;
-        const rightAtUp = rightElbowAngle <= upAngle + angleTolerance;
-        
-        if (rightAtDown && rightStageRef.current === "up") {
-          // Completed rep: went from up position back to down position
-          setRightReps(prev => prev + 1);
-          rightStageRef.current = "down";
-        } else if (rightAtUp && rightStageRef.current === "down") {
-          // Reached up position from down position
-          rightStageRef.current = "up";
-        } else if (rightAtDown && rightStageRef.current === "down") {
-          // Still at down position (ready to start)
-          rightStageRef.current = "down";
-        }
-        
-        // Update posture feedback
-        setLeftPostureCorrect(leftAtDown || leftAtUp);
-        setRightPostureCorrect(rightAtDown || rightAtUp);
-      }
+    const exercise = EXERCISES[selectedExercise];
+    if (!exercise) return;
+
+    const { downAngle, upAngle, joint } = exercise;
+    const leftAngle = joint === "elbow" ? leftElbowAngle : leftShoulderAngleVal;
+    const rightAngle = joint === "elbow" ? rightElbowAngle : rightShoulderAngleVal;
+
+    const tolerance = 10;
+    const isDown = (angle) => Math.abs(angle - downAngle) <= tolerance;
+    const isUp = (angle) => joint === "shoulder"
+      ? angle >= upAngle - tolerance
+      : angle <= upAngle + tolerance;
+
+    // Posture feedback: check if currently in correct down or up position
+    setLeftPostureCorrect(isDown(leftAngle) || isUp(leftAngle));
+    setRightPostureCorrect(isDown(rightAngle) || isUp(rightAngle));
+
+    // Rep counting: down -> up = 1 rep
+    if (isDown(leftAngle)) {
+      leftStageRef.current = "down";
+    }
+    if (isUp(leftAngle) && leftStageRef.current === "down") {
+      leftStageRef.current = "up";
+      setLeftReps(prev => prev + 1);
+    }
+
+    if (isDown(rightAngle)) {
+      rightStageRef.current = "down";
+    }
+    if (isUp(rightAngle) && rightStageRef.current === "down") {
+      rightStageRef.current = "up";
+      setRightReps(prev => prev + 1);
+    }
 
     ctx.font = "16px Arial";
     ctx.fillStyle = "#ffffff";
@@ -383,22 +381,38 @@ export default function PoseTracker() {
                 <h3 className="text-lg font-semibold text-white">Exercise</h3>
               </div>
               
-              <Button
-                onClick={() => setSelectedExercise("bicep_curl")}
-                variant={selectedExercise === "bicep_curl" ? "default" : "outline"}
-                className={`w-full ${
-                  selectedExercise === "bicep_curl"
-                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                    : ""
-                }`}
-                size="lg"
-              >
-                <Dumbbell className="w-5 h-5 mr-2" />
-                Bicep Curl
-              </Button>
-              
-              <p className="text-xs text-zinc-500 mt-3">
-                  Down: 160° | Up: 45° | Rep counted on return to 160°
+                <Button
+                  onClick={() => { setSelectedExercise("bicep_curl"); resetReps(); }}
+                  variant={selectedExercise === "bicep_curl" ? "default" : "outline"}
+                  className={`w-full ${
+                    selectedExercise === "bicep_curl"
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : ""
+                  }`}
+                  size="lg"
+                >
+                  <Dumbbell className="w-5 h-5 mr-2" />
+                  Bicep Curl
+                </Button>
+
+                <Button
+                  onClick={() => { setSelectedExercise("shoulder_press"); resetReps(); }}
+                  variant={selectedExercise === "shoulder_press" ? "default" : "outline"}
+                  className={`w-full mt-2 ${
+                    selectedExercise === "shoulder_press"
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : ""
+                  }`}
+                  size="lg"
+                >
+                  <Dumbbell className="w-5 h-5 mr-2" />
+                  Shoulder Press
+                </Button>
+                
+                <p className="text-xs text-zinc-500 mt-3">
+                  {selectedExercise === "bicep_curl"
+                    ? "Down: elbow ~160° | Up: elbow ~45° = 1 rep"
+                    : "Down: shoulder ~90° | Up: shoulder ~170° = 1 rep"}
                 </p>
             </CardContent>
           </Card>
@@ -449,8 +463,10 @@ export default function PoseTracker() {
                 </div>
                 
                 <p className="text-xs text-zinc-500 mt-4">
-                  Extend arms fully (~160°) with shoulders stable for correct bicep curl position
-                </p>
+                    {selectedExercise === "bicep_curl"
+                      ? "Extend arms fully (~160°) then curl up (~45°) for a rep"
+                      : "Start at ~90° shoulder angle, press up to ~170° for a rep"}
+                  </p>
               </CardContent>
             </Card>
           )}
