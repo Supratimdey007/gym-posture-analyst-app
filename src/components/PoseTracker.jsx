@@ -19,8 +19,8 @@ const VIDEO_HEIGHT = 540;
 const EXERCISES = {
   bicep_curl: {
     name: "Bicep Curl",
-    targetElbowAngle: 160,
-    targetShoulderAngle: 20,
+    downAngle: 160,
+    upAngle: 45,
     angleTolerance: 10,
   },
 };
@@ -93,36 +93,47 @@ export default function PoseTracker() {
     setLeftShoulderAngle(leftShoulderAngleVal);
     setRightShoulderAngle(rightShoulderAngleVal);
 
-    // Check posture for selected exercise (Bicep Curl)
-    const exercise = EXERCISES[selectedExercise];
-    if (exercise) {
-      const { targetElbowAngle, targetShoulderAngle, angleTolerance } = exercise;
-      
-      // Check if elbow angle is around 160 degrees (correct starting/ending position)
-      const leftElbowCorrect = Math.abs(leftElbowAngle - targetElbowAngle) <= angleTolerance;
-      const leftShoulderCorrect = leftShoulderAngleVal <= targetShoulderAngle + angleTolerance;
-      setLeftPostureCorrect(leftElbowCorrect && leftShoulderCorrect);
-      
-      const rightElbowCorrect = Math.abs(rightElbowAngle - targetElbowAngle) <= angleTolerance;
-      const rightShoulderCorrect = rightShoulderAngleVal <= targetShoulderAngle + angleTolerance;
-      setRightPostureCorrect(rightElbowCorrect && rightShoulderCorrect);
-    }
-
-    if (leftElbowAngle > 155) {
-      leftStageRef.current = "down";
-    }
-    if (leftElbowAngle < 60 && leftStageRef.current === "down") {
-      leftStageRef.current = "up";
-      setLeftReps(prev => prev + 1);
-    }
-
-    if (rightElbowAngle > 155) {
-      rightStageRef.current = "down";
-    }
-    if (rightElbowAngle < 60 && rightStageRef.current === "down") {
-      rightStageRef.current = "up";
-      setRightReps(prev => prev + 1);
-    }
+    // Rep counting logic for selected exercise
+      const exercise = EXERCISES[selectedExercise];
+      if (exercise) {
+        const { downAngle, upAngle, angleTolerance } = exercise;
+        
+        // Left arm rep counting: down (160°) -> up (45°) -> down (160°) = 1 rep
+        const leftAtDown = leftElbowAngle >= downAngle - angleTolerance;
+        const leftAtUp = leftElbowAngle <= upAngle + angleTolerance;
+        
+        if (leftAtDown && leftStageRef.current === "up") {
+          // Completed rep: went from up position back to down position
+          setLeftReps(prev => prev + 1);
+          leftStageRef.current = "down";
+        } else if (leftAtUp && leftStageRef.current === "down") {
+          // Reached up position from down position
+          leftStageRef.current = "up";
+        } else if (leftAtDown && leftStageRef.current === "down") {
+          // Still at down position (ready to start)
+          leftStageRef.current = "down";
+        }
+        
+        // Right arm rep counting: down (160°) -> up (45°) -> down (160°) = 1 rep
+        const rightAtDown = rightElbowAngle >= downAngle - angleTolerance;
+        const rightAtUp = rightElbowAngle <= upAngle + angleTolerance;
+        
+        if (rightAtDown && rightStageRef.current === "up") {
+          // Completed rep: went from up position back to down position
+          setRightReps(prev => prev + 1);
+          rightStageRef.current = "down";
+        } else if (rightAtUp && rightStageRef.current === "down") {
+          // Reached up position from down position
+          rightStageRef.current = "up";
+        } else if (rightAtDown && rightStageRef.current === "down") {
+          // Still at down position (ready to start)
+          rightStageRef.current = "down";
+        }
+        
+        // Update posture feedback
+        setLeftPostureCorrect(leftAtDown || leftAtUp);
+        setRightPostureCorrect(rightAtDown || rightAtUp);
+      }
 
     ctx.font = "16px Arial";
     ctx.fillStyle = "#ffffff";
@@ -387,8 +398,8 @@ export default function PoseTracker() {
               </Button>
               
               <p className="text-xs text-zinc-500 mt-3">
-                Target: Elbow angle ~160° at start/end position
-              </p>
+                  Down: 160° | Up: 45° | Rep counted on return to 160°
+                </p>
             </CardContent>
           </Card>
 
