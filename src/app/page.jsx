@@ -1,10 +1,10 @@
 // src/app/page.jsx
 import React from "react";
-import PostureTracker from "@/components/PoseTracker";   // ← default import, adjust path/name if needed
+import PostureTracker from "@/components/PoseTracker";   
 import { Dumbbell } from "lucide-react";
 
 export default function PoseTracker() {
-  console.log("PostureTracker imported:", PostureTracker); // debug line – remove later
+  console.log("PostureTracker imported:", PostureTracker); 
 
   return (
     <div className="min-h-screen bg-zinc-950">
