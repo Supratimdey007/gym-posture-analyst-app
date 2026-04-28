@@ -34,8 +34,15 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
-, "src/app/layout.jsx", "src/app/page.jsx", "src/components/PoseTracker.jsx", "src/components/ui/accordion.jsx", "src/components/ui/alert-dialog.jsx", "src/components/ui/aspect-ratio.jsx"  ],
+    "**/*.mts",
+    "src/app/layout.jsx",
+    "src/app/page.jsx",
+    "src/components/PoseTracker.jsx",
+    "src/components/ui/accordion.jsx",
+    "src/components/ui/alert-dialog.jsx",
+    "src/components/ui/aspect-ratio.jsx",
+    "next.config.js"
+  ],
   "exclude": [
     "node_modules"
   ]

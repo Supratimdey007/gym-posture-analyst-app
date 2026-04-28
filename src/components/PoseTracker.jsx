@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Camera, CameraOff, RotateCcw, Dumbbell, CheckCircle2, XCircle, Volume2, VolumeX } from "lucide-react";
 
+
 const POSE_CONNECTIONS = [
   [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
   [11, 23], [12, 24], [23, 24], [23, 25], [24, 26],
@@ -132,11 +133,11 @@ export default function PoseTracker() {
     const leftAngle = joint === "elbow" ? leftElbowAngle : leftShoulderAngleVal;
     const rightAngle = joint === "elbow" ? rightElbowAngle : rightShoulderAngleVal;
 
-    const tolerance = 15; 
+    const tolerance = 15;
     const isDown = (angle) => angle !== null && Math.abs(angle - downAngle) <= tolerance;
-    const isUp = (angle) => angle !== null && 
-      (joint === "shoulder" 
-        ? angle >= upAngle - tolerance 
+    const isUp = (angle) => angle !== null &&
+      (joint === "shoulder"
+        ? angle >= upAngle - tolerance
         : angle <= upAngle + tolerance);
 
     setLeftPostureCorrect(leftAngle !== null && (isDown(leftAngle) || isUp(leftAngle)));
@@ -211,7 +212,7 @@ export default function PoseTracker() {
       if (lm && lm.visibility > 0.5) {
         ctx.beginPath();
         ctx.arc(lm.x * VIDEO_WIDTH, lm.y * VIDEO_HEIGHT, 6, 0, 2 * Math.PI);
-        ctx.fillStyle = [11,12,13,14,15,16,23,24].includes(i) ? "#ff3366" : "#00aaff";
+        ctx.fillStyle = [11, 12, 13, 14, 15, 16, 23, 24].includes(i) ? "#ff3366" : "#00aaff";
         ctx.fill();
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 2;
@@ -426,18 +427,18 @@ export default function PoseTracker() {
             </Button>
           )}
           <Button onClick={resetReps} variant="outline" size="lg">
-              <RotateCcw className="w-5 h-5 mr-2" />
-              Reset Reps
-            </Button>
-            <Button
-              onClick={() => setVoiceEnabled(prev => !prev)}
-              variant="outline"
-              size="lg"
-              className={voiceEnabled ? "border-emerald-600 text-emerald-400" : "border-zinc-600 text-zinc-400"}
-            >
-              {voiceEnabled ? <Volume2 className="w-5 h-5 mr-2" /> : <VolumeX className="w-5 h-5 mr-2" />}
-              {voiceEnabled ? "Voice On" : "Voice Off"}
-            </Button>
+            <RotateCcw className="w-5 h-5 mr-2" />
+            Reset Reps
+          </Button>
+          <Button
+            onClick={() => setVoiceEnabled(prev => !prev)}
+            variant="outline"
+            size="lg"
+            className={voiceEnabled ? "border-emerald-600 text-emerald-400" : "border-zinc-600 text-zinc-400"}
+          >
+            {voiceEnabled ? <Volume2 className="w-5 h-5 mr-2" /> : <VolumeX className="w-5 h-5 mr-2" />}
+            {voiceEnabled ? "Voice On" : "Voice Off"}
+          </Button>
         </div>
       </div>
 
@@ -452,11 +453,10 @@ export default function PoseTracker() {
             <Button
               onClick={() => { setSelectedExercise("bicep_curl"); resetReps(); }}
               variant={selectedExercise === "bicep_curl" ? "default" : "outline"}
-              className={`w-full ${
-                selectedExercise === "bicep_curl"
+              className={`w-full ${selectedExercise === "bicep_curl"
                   ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                   : ""
-              }`}
+                }`}
               size="lg"
             >
               <Dumbbell className="w-5 h-5 mr-2" />
@@ -466,11 +466,10 @@ export default function PoseTracker() {
             <Button
               onClick={() => { setSelectedExercise("shoulder_press"); resetReps(); }}
               variant={selectedExercise === "shoulder_press" ? "default" : "outline"}
-              className={`w-full mt-2 ${
-                selectedExercise === "shoulder_press"
+              className={`w-full mt-2 ${selectedExercise === "shoulder_press"
                   ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                   : ""
-              }`}
+                }`}
               size="lg"
             >
               <Dumbbell className="w-5 h-5 mr-2" />
@@ -489,9 +488,8 @@ export default function PoseTracker() {
               <h3 className="text-lg font-semibold text-white mb-4">Posture Check</h3>
 
               <div className="space-y-3">
-                <div className={`flex items-center justify-between p-3 rounded-lg ${
-                  leftPostureCorrect ? "bg-emerald-900/30 border border-emerald-700" : "bg-red-900/30 border border-red-700"
-                }`}>
+                <div className={`flex items-center justify-between p-3 rounded-lg ${leftPostureCorrect ? "bg-emerald-900/30 border border-emerald-700" : "bg-red-900/30 border border-red-700"
+                  }`}>
                   <span className="text-sm text-zinc-300">Left Arm</span>
                   <div className="flex items-center gap-2">
                     {leftPostureCorrect ? (
@@ -508,9 +506,8 @@ export default function PoseTracker() {
                   </div>
                 </div>
 
-                <div className={`flex items-center justify-between p-3 rounded-lg ${
-                  rightPostureCorrect ? "bg-emerald-900/30 border border-emerald-700" : "bg-red-900/30 border border-red-700"
-                }`}>
+                <div className={`flex items-center justify-between p-3 rounded-lg ${rightPostureCorrect ? "bg-emerald-900/30 border border-emerald-700" : "bg-red-900/30 border border-red-700"
+                  }`}>
                   <span className="text-sm text-zinc-300">Right Arm</span>
                   <div className="flex items-center gap-2">
                     {rightPostureCorrect ? (
